@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  # Build
+  builder-server:
+    # image: mozilla/sbt:0.13.8
+    build: .
+    ports:
+      - '9663:9663' # Lichess backend
+    volumes:
+      - type: bind
+        source: './..' # The lila repo
+        target: /lila
+      - type: volume
+        source: ivy2-cache
+        target: /root/.ivy2
+      - type: volume
+        source: sbt-cache
+        target: /root/.sbt
+    entrypoint: bash -c 'cd /lila && /lila/bin/dev run'
+
+  # Non-Interactive
+  proxy:
+    image: nginx:mainline
+    ports:
+      - '8080:80'
+    volumes:
+      - type: bind
+        source: ./nginx.conf
+        target: /etc/nginx/conf.d/default.conf
+      - type: bind
+        source: ../public
+        target: /public
+  redis:
+    image: redis:buster
+    ports:
+      - '6379'
+  db:
+    image: mongo:bionic
+    ports:
+      - '27017'
+    volumes:
+      - type: volume
+        source: mongodb
+        target: /data/db
+
+volumes:
+  mongodb:
+  ivy2-cache:
+  sbt-cache:
